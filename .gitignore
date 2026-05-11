@@ -4,6 +4,7 @@ intent_api*.json
 # Python
 __pycache__/
 *.pyc
+venv/
 
 # Generated output
 *.pdf

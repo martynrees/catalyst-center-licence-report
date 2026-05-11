@@ -22,12 +22,20 @@ A standalone Python script that authenticates to Cisco Catalyst Center, queries 
 
 ## Installation
 
-Clone the repository and install the dependencies:
+Clone the repository, create a Python virtual environment, and install the dependencies:
 
 ```bash
 git clone https://github.com/martynrees/catalyst-center-licence-report.git
 cd catalyst-center-licence-report
-pip install requests fpdf2
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+On Windows, activate the virtual environment with:
+
+```cmd
+venv\Scripts\activate
 ```
 
 ## Usage
