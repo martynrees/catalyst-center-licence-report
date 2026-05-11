@@ -1,0 +1,15 @@
+# OpenAPI specifications - never commit to public repo
+intent_api*.json
+
+# Python
+__pycache__/
+*.pyc
+
+# Generated output
+*.pdf
+
+# Build orchestration state
+.sisyphus/
+
+# macOS metadata
+.DS_Store
