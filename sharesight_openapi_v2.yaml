@@ -1,0 +1,2214 @@
+openapi: 3.0.3
+info:
+  title: Sharesight User API v2
+  description: >
+    The Sharesight User API v2 allows you to access and manage portfolio data
+    including holdings, trades, performance reports, and custom investments.
+    Authentication is via OAuth 2.0 with Bearer tokens valid for 30 minutes.
+  version: "2.0"
+  contact:
+    email: api@sharesight.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.sharesight.com/api/v2
+    description: Sharesight API v2
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://portfolio.sharesight.com/oauth2/authorize
+          tokenUrl: https://api.sharesight.com/oauth2/token
+          scopes:
+            read: Read portfolio data
+            write: Write portfolio data
+
+  schemas:
+    ApiTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        version:
+          type: integer
+        action:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    Links:
+      type: object
+      properties:
+        self:
+          type: string
+          format: uri
+        portfolio:
+          type: string
+          format: uri
+
+    Currency:
+      type: object
+      properties:
+        code:
+          type: string
+          example: AUD
+        id:
+          type: integer
+        symbol:
+          type: string
+          example: $
+        qualified_symbol:
+          type: string
+          example: A$
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: string
+        per_page:
+          type: integer
+
+    Instrument:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+          example: BHP
+        name:
+          type: string
+          example: BHP Group Limited
+        market_code:
+          type: string
+          example: ASX
+        currency_code:
+          type: string
+          example: AUD
+        crypto:
+          type: boolean
+        expires_on:
+          type: string
+          format: date
+          nullable: true
+        tz_name:
+          type: string
+        sector:
+          type: string
+          nullable: true
+        industry:
+          type: string
+          nullable: true
+
+    Portfolio:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        consolidated:
+          type: boolean
+        currency_code:
+          type: string
+          example: AUD
+        country_code:
+          type: string
+          example: AU
+        financial_year_end:
+          type: string
+          example: "06/30"
+        inception_date:
+          type: string
+          format: date
+          nullable: true
+        access_level:
+          type: integer
+          description: "1=full, 2=reporting, 3=restricted"
+        user_id:
+          type: integer
+        owner_name:
+          type: string
+        links:
+          $ref: '#/components/schemas/Links'
+
+    PortfolioUserSetting:
+      type: object
+      properties:
+        portfolio_chart:
+          type: boolean
+        holding_chart:
+          type: boolean
+        grouping:
+          type: string
+        report_currency:
+          type: string
+
+    Holding:
+      type: object
+      properties:
+        id:
+          type: integer
+        instrument:
+          $ref: '#/components/schemas/Instrument'
+        quantity:
+          type: number
+          format: float
+        value:
+          type: number
+          format: float
+        cost_base:
+          type: number
+          format: float
+        capital_gain:
+          type: number
+          format: float
+        payout_gain:
+          type: number
+          format: float
+        currency_gain:
+          type: number
+          format: float
+        gain_percentage:
+          type: number
+          format: float
+        total_gain:
+          type: number
+          format: float
+        total_gain_percentage:
+          type: number
+          format: float
+        portfolio_id:
+          type: integer
+        links:
+          $ref: '#/components/schemas/Links'
+
+    Trade:
+      type: object
+      properties:
+        id:
+          type: integer
+        holding_id:
+          type: integer
+        portfolio_id:
+          type: integer
+        transaction_date:
+          type: string
+          format: date
+        quantity:
+          type: number
+          format: float
+        price:
+          type: number
+          format: float
+        brokerage:
+          type: number
+          format: float
+        brokerage_currency_code:
+          type: string
+        transaction_type:
+          type: string
+          enum: [BUY, SELL, ADJUST_COST, SPLIT_AND_REORGANISATION]
+        comments:
+          type: string
+          nullable: true
+        exchange_rate:
+          type: number
+          format: float
+          nullable: true
+        company_event_id:
+          type: integer
+          nullable: true
+        attachment_filename:
+          type: string
+          nullable: true
+        confirmed:
+          type: boolean
+        links:
+          $ref: '#/components/schemas/Links'
+
+    CreateTradeRequest:
+      type: object
+      required:
+        - transaction_date
+        - quantity
+        - price
+        - transaction_type
+      properties:
+        transaction_date:
+          type: string
+          format: date
+        quantity:
+          type: number
+          format: float
+        price:
+          type: number
+          format: float
+        brokerage:
+          type: number
+          format: float
+        brokerage_currency_code:
+          type: string
+        transaction_type:
+          type: string
+          enum: [BUY, SELL, ADJUST_COST, SPLIT_AND_REORGANISATION]
+        comments:
+          type: string
+        exchange_rate:
+          type: number
+          format: float
+        symbol:
+          type: string
+          description: Instrument code (required when creating a new holding via a trade)
+        market:
+          type: string
+          description: Market code (required when creating a new holding via a trade)
+
+    PayoutEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        holding_id:
+          type: integer
+        portfolio_id:
+          type: integer
+        paid_on:
+          type: string
+          format: date
+        amount:
+          type: number
+          format: float
+        currency_code:
+          type: string
+        exchange_rate:
+          type: number
+          format: float
+          nullable: true
+        tax_deducted:
+          type: number
+          format: float
+          nullable: true
+        transaction_type:
+          type: string
+          enum: [DIVIDEND, INTEREST, TAX_CREDIT, RETURN_OF_CAPITAL, NON_RESIDENT_TAX]
+        comments:
+          type: string
+          nullable: true
+        confirmed:
+          type: boolean
+        links:
+          $ref: '#/components/schemas/Links'
+
+    CashAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+        key:
+          type: string
+        name:
+          type: string
+        value:
+          type: number
+          format: float
+        currency:
+          $ref: '#/components/schemas/Currency'
+        source:
+          type: string
+          nullable: true
+
+    PerformanceReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        portfolio_id:
+          type: integer
+        value:
+          type: number
+          format: float
+        grouping:
+          type: string
+        currency_code:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        capital_gain:
+          type: number
+          format: float
+        payout_gain:
+          type: number
+          format: float
+        currency_gain:
+          type: number
+          format: float
+        total_gain:
+          type: number
+          format: float
+        total_gain_percentage:
+          type: number
+          format: float
+        annualised_performance:
+          type: number
+          format: float
+        holdings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Holding'
+        cash_accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/CashAccount'
+
+    CustomInvestment:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        name:
+          type: string
+        country_code:
+          type: string
+        currency_code:
+          type: string
+        investment_type:
+          type: string
+          enum: [SHARES, MANAGED_FUND, FIXED_INTEREST, PROPERTY]
+        face_value:
+          type: number
+          format: float
+          nullable: true
+        interest_rate:
+          type: number
+          format: float
+          nullable: true
+        maturity_date:
+          type: string
+          format: date
+          nullable: true
+        portfolio_id:
+          type: integer
+          nullable: true
+        links:
+          $ref: '#/components/schemas/Links'
+
+    CustomInvestmentPrice:
+      type: object
+      properties:
+        id:
+          type: integer
+        last_traded_price:
+          type: number
+          format: float
+        last_traded_on:
+          type: string
+          format: date
+        last_traded_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    Country:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+          example: AU
+        currency_code:
+          type: string
+          example: AUD
+
+    Membership:
+      type: object
+      properties:
+        id:
+          type: integer
+        portfolio_id:
+          type: integer
+        user_id:
+          type: integer
+        access_level:
+          type: integer
+          description: "1=full, 2=reporting, 3=restricted"
+        owner:
+          type: boolean
+        links:
+          $ref: '#/components/schemas/Links'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        currency_code:
+          type: string
+        country_code:
+          type: string
+
+    BaseResponse:
+      type: object
+      properties:
+        api_transaction:
+          $ref: '#/components/schemas/ApiTransaction'
+        links:
+          $ref: '#/components/schemas/Links'
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        reason:
+          type: string
+        transaction_id:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+  responses:
+    Unauthorized:
+      description: Authentication required or token expired
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions to access this resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+paths:
+  # ── Authentication ──────────────────────────────────────────────────────────
+
+  /oauth2/token:
+    servers:
+      - url: https://api.sharesight.com
+    post:
+      summary: Obtain an OAuth 2.0 access token
+      operationId: getAccessToken
+      security: []
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - grant_type
+                - client_id
+                - client_secret
+              properties:
+                grant_type:
+                  type: string
+                  enum: [authorization_code, client_credentials, refresh_token]
+                client_id:
+                  type: string
+                client_secret:
+                  type: string
+                code:
+                  type: string
+                  description: Required for authorization_code grant
+                redirect_uri:
+                  type: string
+                  description: Required for authorization_code grant
+                refresh_token:
+                  type: string
+                  description: Required for refresh_token grant
+      responses:
+        "200":
+          description: Access token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: Bearer
+                  expires_in:
+                    type: integer
+                    example: 1800
+                  refresh_token:
+                    type: string
+                  created_at:
+                    type: integer
+                    description: Unix timestamp
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+  /oauth/revoke:
+    post:
+      summary: Revoke an OAuth 2.0 access token
+      operationId: revokeAccessToken
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - client_id
+              properties:
+                client_id:
+                  type: string
+      responses:
+        "200":
+          description: Token revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Portfolios ───────────────────────────────────────────────────────────────
+
+  /portfolios.json:
+    get:
+      summary: List all portfolios
+      operationId: listPortfolios
+      tags: [Portfolios]
+      parameters:
+        - name: consolidated
+          in: query
+          schema:
+            type: boolean
+          description: Include consolidated portfolios
+        - name: instrument_id
+          in: query
+          schema:
+            type: integer
+          description: Filter portfolios containing this instrument
+      responses:
+        "200":
+          description: List of portfolios
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      portfolios:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Portfolio'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create a new portfolio
+      operationId: createPortfolio
+      tags: [Portfolios]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - currency_code
+                - country_code
+              properties:
+                name:
+                  type: string
+                currency_code:
+                  type: string
+                country_code:
+                  type: string
+                financial_year_end:
+                  type: string
+                  example: "06/30"
+      responses:
+        "201":
+          description: Portfolio created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      portfolio:
+                        $ref: '#/components/schemas/Portfolio'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /portfolios/{id}.json:
+    get:
+      summary: Get a portfolio
+      operationId: getPortfolio
+      tags: [Portfolios]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: consolidated
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Portfolio details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      portfolio:
+                        $ref: '#/components/schemas/Portfolio'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update a portfolio
+      operationId: updatePortfolio
+      tags: [Portfolios]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                currency_code:
+                  type: string
+                country_code:
+                  type: string
+                financial_year_end:
+                  type: string
+      responses:
+        "200":
+          description: Portfolio updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      portfolio:
+                        $ref: '#/components/schemas/Portfolio'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      summary: Delete a portfolio
+      operationId: deletePortfolio
+      tags: [Portfolios]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Portfolio deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  # ── Holdings ─────────────────────────────────────────────────────────────────
+
+  /portfolios/{portfolio_id}/holdings.json:
+    get:
+      summary: List holdings for a portfolio
+      operationId: listHoldings
+      tags: [Holdings]
+      parameters:
+        - name: portfolio_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: consolidated
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of holdings
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      holdings:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Holding'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /holdings/{id}.json:
+    get:
+      summary: Get a holding
+      operationId: getHolding
+      tags: [Holdings]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: average_purchase_price
+          in: query
+          schema:
+            type: boolean
+        - name: cost_base
+          in: query
+          schema:
+            type: boolean
+        - name: values_over_time
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Holding details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      holding:
+                        $ref: '#/components/schemas/Holding'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update a holding
+      operationId: updateHolding
+      tags: [Holdings]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enable_drp:
+                  type: boolean
+                drp_mode_setting:
+                  type: string
+      responses:
+        "200":
+          description: Holding updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      holding:
+                        $ref: '#/components/schemas/Holding'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      summary: Delete a holding and all associated trades
+      operationId: deleteHolding
+      tags: [Holdings]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Holding deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  # ── Trades ───────────────────────────────────────────────────────────────────
+
+  /portfolios/{portfolio_id}/trades.json:
+    get:
+      summary: List trades for a portfolio
+      operationId: listPortfolioTrades
+      tags: [Trades]
+      parameters:
+        - name: portfolio_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter trades from this date (YYYY-MM-DD)
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter trades up to this date (YYYY-MM-DD)
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of trades
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      trades:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Trade'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+    post:
+      summary: Create a trade in a portfolio
+      operationId: createPortfolioTrade
+      tags: [Trades]
+      parameters:
+        - name: portfolio_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                trade:
+                  $ref: '#/components/schemas/CreateTradeRequest'
+      responses:
+        "201":
+          description: Trade created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      trade:
+                        $ref: '#/components/schemas/Trade'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /holdings/{holding_id}/trades.json:
+    get:
+      summary: List trades for a holding
+      operationId: listHoldingTrades
+      tags: [Trades]
+      parameters:
+        - name: holding_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of trades for the holding
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      trades:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Trade'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+    post:
+      summary: Create a trade for a holding
+      operationId: createHoldingTrade
+      tags: [Trades]
+      parameters:
+        - name: holding_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                trade:
+                  $ref: '#/components/schemas/CreateTradeRequest'
+      responses:
+        "201":
+          description: Trade created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      trade:
+                        $ref: '#/components/schemas/Trade'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /trades/{id}.json:
+    get:
+      summary: Get a trade
+      operationId: getTrade
+      tags: [Trades]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Trade details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      trade:
+                        $ref: '#/components/schemas/Trade'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update a trade
+      operationId: updateTrade
+      tags: [Trades]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                trade:
+                  $ref: '#/components/schemas/CreateTradeRequest'
+      responses:
+        "200":
+          description: Trade updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      trade:
+                        $ref: '#/components/schemas/Trade'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      summary: Delete a trade
+      operationId: deleteTrade
+      tags: [Trades]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Trade deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  # ── Payout Events (Dividends) ─────────────────────────────────────────────────
+
+  /holdings/{holding_id}/payout_events.json:
+    get:
+      summary: List payout events (dividends) for a holding
+      operationId: listPayoutEvents
+      tags: [Payout Events]
+      parameters:
+        - name: holding_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: List of payout events
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      payout_events:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PayoutEvent'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+    post:
+      summary: Create a payout event for a holding
+      operationId: createPayoutEvent
+      tags: [Payout Events]
+      parameters:
+        - name: holding_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - payout_event
+              properties:
+                payout_event:
+                  type: object
+                  required:
+                    - paid_on
+                    - amount
+                    - transaction_type
+                  properties:
+                    paid_on:
+                      type: string
+                      format: date
+                    amount:
+                      type: number
+                      format: float
+                    currency_code:
+                      type: string
+                    exchange_rate:
+                      type: number
+                      format: float
+                    tax_deducted:
+                      type: number
+                      format: float
+                    transaction_type:
+                      type: string
+                      enum: [DIVIDEND, INTEREST, TAX_CREDIT, RETURN_OF_CAPITAL, NON_RESIDENT_TAX]
+                    comments:
+                      type: string
+      responses:
+        "201":
+          description: Payout event created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      payout_event:
+                        $ref: '#/components/schemas/PayoutEvent'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /payout_events/{id}.json:
+    get:
+      summary: Get a payout event
+      operationId: getPayoutEvent
+      tags: [Payout Events]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payout event details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      payout_event:
+                        $ref: '#/components/schemas/PayoutEvent'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update a payout event
+      operationId: updatePayoutEvent
+      tags: [Payout Events]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payout_event:
+                  type: object
+                  properties:
+                    paid_on:
+                      type: string
+                      format: date
+                    amount:
+                      type: number
+                      format: float
+                    currency_code:
+                      type: string
+                    exchange_rate:
+                      type: number
+                      format: float
+                    tax_deducted:
+                      type: number
+                      format: float
+                    transaction_type:
+                      type: string
+                      enum: [DIVIDEND, INTEREST, TAX_CREDIT, RETURN_OF_CAPITAL, NON_RESIDENT_TAX]
+                    comments:
+                      type: string
+      responses:
+        "200":
+          description: Payout event updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      payout_event:
+                        $ref: '#/components/schemas/PayoutEvent'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      summary: Delete a payout event
+      operationId: deletePayoutEvent
+      tags: [Payout Events]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payout event deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  # ── Cash Accounts ─────────────────────────────────────────────────────────────
+
+  /portfolios/{portfolio_id}/cash_accounts.json:
+    get:
+      summary: List cash accounts for a portfolio
+      operationId: listCashAccounts
+      tags: [Cash Accounts]
+      parameters:
+        - name: portfolio_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of cash accounts
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      cash_accounts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CashAccount'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  # ── Performance Reports ───────────────────────────────────────────────────────
+
+  /portfolios/{portfolio_id}/performance.json:
+    get:
+      summary: Get performance report for a portfolio
+      operationId: getPerformanceReport
+      tags: [Reports]
+      parameters:
+        - name: portfolio_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: consolidated
+          in: query
+          schema:
+            type: boolean
+        - name: include_sales
+          in: query
+          schema:
+            type: boolean
+        - name: grouping
+          in: query
+          schema:
+            type: string
+            enum: [ungrouped, market, type, label, custom_group]
+        - name: benchmark_code
+          in: query
+          schema:
+            type: string
+        - name: report_currency
+          in: query
+          schema:
+            type: string
+            description: ISO 4217 currency code for the report
+      responses:
+        "200":
+          description: Performance report
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      report:
+                        $ref: '#/components/schemas/PerformanceReport'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /portfolios/{portfolio_id}/valuation.json:
+    get:
+      summary: Get valuation report for a portfolio
+      operationId: getValuationReport
+      tags: [Reports]
+      parameters:
+        - name: portfolio_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Valuation date (defaults to today)
+        - name: grouping
+          in: query
+          schema:
+            type: string
+            enum: [ungrouped, market, type, label]
+        - name: report_currency
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Valuation report
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      valuation:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          portfolio_id:
+                            type: integer
+                          value:
+                            type: number
+                            format: float
+                          currency_code:
+                            type: string
+                          date:
+                            type: string
+                            format: date
+                          holdings:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Holding'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /portfolios/{portfolio_id}/diversity.json:
+    get:
+      summary: Get diversity report for a portfolio
+      operationId: getDiversityReport
+      tags: [Reports]
+      parameters:
+        - name: portfolio_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: grouping
+          in: query
+          schema:
+            type: string
+            enum: [market, type, sector, industry]
+        - name: report_currency
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Diversity report
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      diversity:
+                        type: object
+                        properties:
+                          portfolio_id:
+                            type: integer
+                          date:
+                            type: string
+                            format: date
+                          groups:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                label:
+                                  type: string
+                                percentage:
+                                  type: number
+                                  format: float
+                                value:
+                                  type: number
+                                  format: float
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /portfolios/{portfolio_id}/taxable_income_report.json:
+    get:
+      summary: Get taxable income report for a portfolio
+      operationId: getTaxableIncomeReport
+      tags: [Reports]
+      parameters:
+        - name: portfolio_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: report_currency
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Taxable income report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  # ── Custom Investments ────────────────────────────────────────────────────────
+
+  /custom_investments.json:
+    get:
+      summary: List custom investments
+      operationId: listCustomInvestments
+      tags: [Custom Investments]
+      parameters:
+        - name: portfolio_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of custom investments
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      custom_investments:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CustomInvestment'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create a custom investment
+      operationId: createCustomInvestment
+      tags: [Custom Investments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - custom_investment
+              properties:
+                custom_investment:
+                  type: object
+                  required:
+                    - code
+                    - name
+                    - country_code
+                    - investment_type
+                  properties:
+                    code:
+                      type: string
+                    name:
+                      type: string
+                    country_code:
+                      type: string
+                    currency_code:
+                      type: string
+                    investment_type:
+                      type: string
+                      enum: [SHARES, MANAGED_FUND, FIXED_INTEREST, PROPERTY]
+                    portfolio_id:
+                      type: integer
+                    face_value:
+                      type: number
+                      format: float
+                    interest_rate:
+                      type: number
+                      format: float
+                    maturity_date:
+                      type: string
+                      format: date
+      responses:
+        "201":
+          description: Custom investment created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      custom_investment:
+                        $ref: '#/components/schemas/CustomInvestment'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /custom_investments/{id}.json:
+    get:
+      summary: Get a custom investment
+      operationId: getCustomInvestment
+      tags: [Custom Investments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Custom investment details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      custom_investment:
+                        $ref: '#/components/schemas/CustomInvestment'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update a custom investment
+      operationId: updateCustomInvestment
+      tags: [Custom Investments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                custom_investment:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                    name:
+                      type: string
+                    country_code:
+                      type: string
+                    currency_code:
+                      type: string
+                    investment_type:
+                      type: string
+                      enum: [SHARES, MANAGED_FUND, FIXED_INTEREST, PROPERTY]
+                    face_value:
+                      type: number
+                      format: float
+                    interest_rate:
+                      type: number
+                      format: float
+                    maturity_date:
+                      type: string
+                      format: date
+      responses:
+        "200":
+          description: Custom investment updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      custom_investment:
+                        $ref: '#/components/schemas/CustomInvestment'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      summary: Delete a custom investment
+      operationId: deleteCustomInvestment
+      tags: [Custom Investments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Custom investment deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /custom_investment/{custom_investment_id}/prices.json:
+    get:
+      summary: List prices for a custom investment
+      operationId: listCustomInvestmentPrices
+      tags: [Custom Investments]
+      parameters:
+        - name: custom_investment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of prices
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      prices:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CustomInvestmentPrice'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+    post:
+      summary: Create a price for a custom investment
+      operationId: createCustomInvestmentPrice
+      tags: [Custom Investments]
+      parameters:
+        - name: custom_investment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - price
+              properties:
+                price:
+                  type: object
+                  required:
+                    - last_traded_price
+                    - last_traded_on
+                  properties:
+                    last_traded_price:
+                      type: number
+                      format: float
+                    last_traded_on:
+                      type: string
+                      format: date
+      responses:
+        "201":
+          description: Price created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      price:
+                        $ref: '#/components/schemas/CustomInvestmentPrice'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /prices/{id}.json:
+    put:
+      summary: Update a custom investment price
+      operationId: updateCustomInvestmentPrice
+      tags: [Custom Investments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                price:
+                  type: object
+                  properties:
+                    last_traded_price:
+                      type: number
+                      format: float
+                    last_traded_on:
+                      type: string
+                      format: date
+      responses:
+        "200":
+          description: Price updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      price:
+                        $ref: '#/components/schemas/CustomInvestmentPrice'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      summary: Delete a custom investment price
+      operationId: deleteCustomInvestmentPrice
+      tags: [Custom Investments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Price deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  # ── Memberships ───────────────────────────────────────────────────────────────
+
+  /portfolios/{portfolio_id}/memberships.json:
+    get:
+      summary: List memberships for a portfolio
+      operationId: listMemberships
+      tags: [Memberships]
+      parameters:
+        - name: portfolio_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of memberships
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      memberships:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Membership'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+    post:
+      summary: Add a member to a portfolio
+      operationId: createMembership
+      tags: [Memberships]
+      parameters:
+        - name: portfolio_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - membership
+              properties:
+                membership:
+                  type: object
+                  required:
+                    - email
+                    - access_level
+                  properties:
+                    email:
+                      type: string
+                      format: email
+                    access_level:
+                      type: integer
+                      description: "1=full, 2=reporting, 3=restricted"
+      responses:
+        "201":
+          description: Membership created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      membership:
+                        $ref: '#/components/schemas/Membership'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /memberships/{id}.json:
+    put:
+      summary: Update a membership
+      operationId: updateMembership
+      tags: [Memberships]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                membership:
+                  type: object
+                  properties:
+                    access_level:
+                      type: integer
+      responses:
+        "200":
+          description: Membership updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      membership:
+                        $ref: '#/components/schemas/Membership'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Remove a member from a portfolio
+      operationId: deleteMembership
+      tags: [Memberships]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Membership deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  # ── Users ─────────────────────────────────────────────────────────────────────
+
+  /user.json:
+    get:
+      summary: Get the authenticated user
+      operationId: getUser
+      tags: [Users]
+      responses:
+        "200":
+          description: Authenticated user details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Countries ─────────────────────────────────────────────────────────────────
+
+  /countries.json:
+    get:
+      summary: List supported countries
+      operationId: listCountries
+      tags: [Countries]
+      parameters:
+        - name: supported
+          in: query
+          schema:
+            type: boolean
+          description: Filter to only countries supported as portfolio regions
+      responses:
+        "200":
+          description: List of countries
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      countries:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Country'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+tags:
+  - name: Authentication
+    description: OAuth 2.0 token management
+  - name: Portfolios
+    description: Portfolio CRUD and settings
+  - name: Holdings
+    description: Holding positions within a portfolio
+  - name: Trades
+    description: Buy/sell trade transactions
+  - name: Payout Events
+    description: Dividend and income events
+  - name: Cash Accounts
+    description: Cash account balances
+  - name: Reports
+    description: Performance, valuation, and diversity reports
+  - name: Custom Investments
+    description: Unlisted and custom securities and their prices
+  - name: Memberships
+    description: Portfolio access management
+  - name: Users
+    description: Authenticated user profile
+  - name: Countries
+    description: Supported country reference data
